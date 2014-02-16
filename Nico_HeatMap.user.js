@@ -49,12 +49,12 @@
     var $settingPanel = (function(config) {
         var $menu   = $('<li class="nicoHeatMapSettingMenu"><a href="javascript:;" title="NicoHeatMapの設定変更">NicoHeatMap設定</a></li>');
         var $panel  = $('<div id="nicoHeatMapSettingPanel" />');//.addClass('open');
-        var $button = $('<button class="toggleSetting playerBottomButton">設定</botton>');
+//        var $button = $('<button class="toggleSetting playerBottomButton">設定</botton>');
 
-        $button.on('click', function(e) {
-          e.stopPropagation(); e.preventDefault();
-          $panel.toggleClass('open');
-        });
+//        $button.on('click', function(e) {
+//          e.stopPropagation(); e.preventDefault();
+//          $panel.toggleClass('open');
+//        });
 
         $menu.find('a').on('click', function() { $panel.toggleClass('open'); });
 
@@ -98,7 +98,7 @@
         });
 
 
-        $('#playerAlignmentArea').append($button);
+//        $('#playerAlignmentArea').append($button);
         $('#siteHeaderRightMenuFix').after($menu);
         $('body').append($panel);
 
