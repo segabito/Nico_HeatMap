@@ -3,7 +3,7 @@
 // @namespace   https://github.com/segabito/
 // @description コメントの盛り上がり状態をシンプルにグラフ表示。 GINZA用
 // @include     http://www.nicovideo.jp/watch/*
-// @version     1.0.2
+// @version     1.1.0
 // @grant       none
 // ==/UserScript==
 
@@ -13,14 +13,98 @@
 
 // TODO: 他にもなんか直そうと思ってたけど思い出せない。思い出したらやる
 
-(function(w) {
+(function() {
   var monkey =
-  (function(w) {
-    if (!w.WatchApp) { // TODO: 原宿対応？
+  (function() {
+    'use strict';
+    if (!window.WatchApp || !window.WatchJsApi) {
       return;
     }
 
-    var $ = w.jQuery, WatchApp = w.WatchApp;
+    var $ = window.jQuery, WatchApp = window.WatchApp;
+
+    var config =  (function() {
+      var prefix = 'NicoHeatMap_';
+      var conf = {
+        heatMapPosition: 'default',
+        heatMapDisplayMode: 'hover'
+      };
+      return {
+        get: function(key) {
+          try {
+            if (window.localStorage.hasOwnProperty(prefix + key)) {
+              return JSON.parse(window.localStorage.getItem(prefix + key));
+            }
+            return conf[key];
+          } catch (e) {
+            return conf[key];
+          }
+        },
+        set: function(key, value) {
+          window.localStorage.setItem(prefix + key, JSON.stringify(value));
+        }
+      };
+    })();
+
+    var $settingPanel = (function(config) {
+        var $menu   = $('<li class="nicoHeatMapSettingMenu"><a href="javascript:;" title="NicoHeatMapの設定変更">NicoHeatMap設定</a></li>');
+        var $panel  = $('<div id="nicoHeatMapSettingPanel" />');//.addClass('open');
+        var $button = $('<button class="toggleSetting playerBottomButton">設定</botton>');
+
+        $button.on('click', function(e) {
+          e.stopPropagation(); e.preventDefault();
+          $panel.toggleClass('open');
+        });
+
+        $menu.find('a').on('click', function() { $panel.toggleClass('open'); });
+
+        var __tpl__ = (function() {/*
+          <div class="panelHeader">
+          <h1 class="windowTitle">NicoHeatMapの設定</h1>
+          <p>設定はリロード後に反映されます</p>
+          <button class="close" title="閉じる">×</button>
+          </div>
+          <div class="panelInner">
+            <div class="item" data-setting-name="heatMapDisplayMode" data-menu-type="radio">
+              <h3 class="itemTitle">HeatMapの表示</h3>
+              <label><input type="radio" value="&quot;always&quot;">常時表示</label>
+              <label><input type="radio" value="&quot;hover&quot;">ホバー時のみ</label>
+            </div>
+
+            <div class="item" data-setting-name="heatMapPosition" data-menu-type="radio">
+              <h3 class="itemTitle">HeatMapの表示</h3>
+              <label><input type="radio" value="&quot;bottom&quot;">プレイヤー下</label>
+              <label><input type="radio" value="&quot;default&quot;">標準</label>
+            </div>
+
+          </div>
+        */}).toString().match(/[^]*\/\*([^]*)\*\/\}$/)[1].replace(/\{\*/g, '/*').replace(/\*\}/g, '*/');
+        $panel.html(__tpl__);
+        $panel.find('.item').on('click', function(e) {
+          var $this = $(this);
+          var settingName = $this.attr('data-setting-name');
+          var value = JSON.parse($this.find('input:checked').val());
+          console.log('seting-name', settingName, 'value', value);
+          config.set(settingName, value);
+        }).each(function(e) {
+          var $this = $(this);
+          var settingName = $this.attr('data-setting-name');
+          var value = config.get(settingName);
+          $this.addClass(settingName);
+          $this.find('input').attr('name', settingName).val([JSON.stringify(value)]);
+        });
+        $panel.find('.close').click(function() {
+          $panel.removeClass('open');
+        });
+
+
+        $('#playerAlignmentArea').append($button);
+        $('#siteHeaderRightMenuFix').after($menu);
+        $('body').append($panel);
+
+        return $panel;
+    })(config);
+
     var addStyle = function(styles, id) {
       var elm = document.createElement('style');
       elm.type = 'text/css';
@@ -56,6 +140,9 @@
       #nicoHeatMapContainer.displayAlways {
         cursor: pointer;
       }
+      #nicoHeatMapContainer.playerBottom {
+        bottom: -6px;
+      }
 
       {* 全画面・小画面・検索画面では非表示 *}
       body.full_with_browser #content #nicoHeatMapContainer,
@@ -75,11 +162,90 @@
         transform: scaleX(8.98); -webkit-transform: scaleX(8.98);
       }
 
-    */}).toString().match(/[^]*\/\*([^]*)\*\/\}$/)[1].replace(/\{\*/, '/*').replace(/\*\}/, '*/');
+      .nicoHeatMapSettingMenu a {
+        font-weight: bolder;
+        white-space: nowrap;
+      }
+      #nicoHeatMapSettingPanel {
+        position: fixed;
+        bottom: 2000px; right: 8px;
+        z-index: -1;
+        width: 500px;
+        background: #f0f0f0; border: 1px solid black;
+        padding: 8px;
+        transition: bottom 0.4s ease-out;
+      }
+      #nicoHeatMapSettingPanel.open {
+        display: block;
+        bottom: 8px;
+        box-shadow: 0 0 8px black;
+        z-index: 10000;
+      }
+      #nicoHeatMapSettingPanel .close {
+        position: absolute;
+        cursor: pointer;
+        right: 8px; top: 8px;
+      }
+      #nicoHeatMapSettingPanel .panelInner {
+        background: #fff;
+        border: 1px inset;
+        padding: 8px;
+        min-height: 300px;
+        overflow-y: scroll;
+        max-height: 500px;
+      }
+      #nicoHeatMapSettingPanel .panelInner .item {
+        border-bottom: 1px dotted #888;
+        margin-bottom: 8px;
+        padding-bottom: 8px;
+      }
+      #nicoHeatMapSettingPanel .panelInner .item:hover {
+        background: #eef;
+      }
+      #nicoHeatMapSettingPanel .windowTitle {
+        font-size: 150%;
+      }
+      #nicoHeatMapSettingPanel .itemTitle {
+      }
+      #nicoHeatMapSettingPanel label {
+
+      }
+      #nicoHeatMapSettingPanel small {
+        color: #666;
+      }
+      #nicoHeatMapSettingPanel .expert {
+        margin: 32px 0 16px;
+        font-size: 150%;
+        background: #ccc;
+      }
+
+    */}).toString().match(/[^]*\/\*([^]*)\*\/\}$/)[1].replace(/\{\*/g, '/*').replace(/\*\}/g, '*/');
     addStyle(__css__, 'nicoHeatMapCSS');
 
 
+    var CommentList = function() { this.initialize.apply(this, arguments); };
+    CommentList.prototype = {
+      initialize: function(WatchApp) {
+        this._WatchApp = WatchApp;
+        this._commentPanelViewController = WatchApp.ns.init.PlayerInitializer.commentPanelViewController;
+      },
+      getComments: function() {
+        var comments = [];
+        var commentPanelViewController = this._commentPanelViewController;
+        var activeListName = commentPanelViewController.commentListModel.getListName();
+        var list = commentPanelViewController.commentLists;
 
+        for (var i = 0; i < list.length; i++) {
+          if (list[i].listName === activeListName) {
+            comments = list[i].comments;
+            break;
+          }
+          var ct = list[i].comments;
+          comments = (comments.length < ct.length) ? ct : comments;
+        }
+        return comments;
+      }
+    };
 
     var HeatMapModel = function() { this.initialize.apply(this, arguments); };
     HeatMapModel.prototype = {
@@ -91,26 +257,14 @@
         this._nicoplayer = params.nicoplayer;
         this._resolution = params.resolution || 100;
         this._WatchApp   = params.WatchApp;
+        this._commentList = new CommentList(this._WatchApp);
       },
       update: function() {
-        var map = this._getHeatMap(this._getComments(), this._getDuration());
+        var map = this._getHeatMap(this._commentList.getComments(), this._getDuration());
         this._view.update(map);
       },
       reset: function() {
         this._view.reset();
-      },
-      _getComments: function() {
-        var comments = [];
-        var list = this._WatchApp.ns.init.PlayerInitializer.commentPanelViewController.commentLists;
-        for (var i = 0; i < list.length; i++) {
-          if (list[i].listName === 'commentlist:main' && list[i].comments.length > 0) {
-            comments = list[i].comments;
-            break;
-          }
-          var ct = list[i].comments;
-          comments = (comments.length < ct.length) ? ct : comments;
-        }
-        return comments;
       },
       _getDuration: function() {
         return this._nicoplayer.ext_getTotalTime(); // watchInfoModelよりたぶん正確
@@ -160,6 +314,13 @@
           $(this).toggleClass('displayAlways');
         });
 
+        if (config.get('heatMapDisplayMode') === 'always') {
+          $container.addClass('displayAlways');
+        }
+        if (config.get('heatMapPosition') === 'bottom') {
+          $container.addClass('playerBottom');
+        }
+
         this._canvas        = document.createElement('canvas');
         this._canvas.id     = 'nicoHeatMap';
         this._canvas.width  = this._width;
@@ -190,6 +351,8 @@
           for (i = map.length - 1; i >= 0; i--) {
             map[i] = Math.min(255, Math.floor(map[i] * rate));
           }
+        } else {
+          return;
         }
 
         var
@@ -265,7 +428,7 @@
       }
     };
 
-    w.NicoHeatMap = new HeatMapController({
+    window.NicoHeatMap = new HeatMapController({
       WatchApp: WatchApp,
       resolution: 100,
       width: 100,
@@ -273,7 +436,7 @@
       target: '#nicoplayerContainerInner',
       playerId: 'external_nicoplayer',
       $: $,
-      window: w
+      window: window
     });
 
   }); // end of monkey
@@ -283,6 +446,6 @@
   gm.setAttribute("type", "text/javascript");
   gm.setAttribute("charset", "UTF-8");
   gm.appendChild(document.createTextNode("(" + monkey + ")(window)"));
-  w.document.body.appendChild(gm);
+  document.body.appendChild(gm);
 
-})(unsafeWindow || window);
+})();
