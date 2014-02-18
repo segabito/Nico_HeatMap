@@ -3,7 +3,7 @@
 // @namespace   https://github.com/segabito/
 // @description コメントの盛り上がり状態をシンプルにグラフ表示。 GINZA用
 // @include     http://www.nicovideo.jp/watch/*
-// @version     1.1.0
+// @version     1.1.1
 // @grant       none
 // ==/UserScript==
 
@@ -72,7 +72,7 @@
             </div>
 
             <div class="item" data-setting-name="heatMapPosition" data-menu-type="radio">
-              <h3 class="itemTitle">HeatMapの表示</h3>
+              <h3 class="itemTitle">HeatMapの位置</h3>
               <label><input type="radio" value="&quot;bottom&quot;">プレイヤー下</label>
               <label><input type="radio" value="&quot;default&quot;">標準</label>
             </div>
