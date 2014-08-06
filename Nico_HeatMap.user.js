@@ -3,7 +3,7 @@
 // @namespace   https://github.com/segabito/
 // @description コメントの盛り上がり状態をシンプルにグラフ表示。 GINZA用
 // @include     http://www.nicovideo.jp/watch/*
-// @version     1.1.2
+// @version     1.1.3
 // @grant       none
 // ==/UserScript==
 
@@ -415,8 +415,10 @@
       update: function() {
         if (!this._commentReady || !this._videoReady || this._updated) return;
         try {
+          console.time('update HeatMap');
           this._updated = true;
           this._model.update();
+          console.timeEnd('update HeatMap');
         } catch(e) {
           console.log('%cException: ', 'color: white; background: red;', e);
           console.trace();
@@ -429,6 +431,7 @@
     };
 
     var initialize = function() {
+      console.log('%cinitialize NicoHeatMap', 'background: lightgreen;');
       window.NicoHeatMap = new HeatMapController({
         WatchApp: WatchApp,
         resolution: 100,
@@ -439,7 +442,7 @@
         $: $,
         window: window
       });
-    }
+    };
 
     if (window.PlayerApp) {
       (function() {
@@ -450,10 +453,10 @@
           var onReset = function() {
             watchInfoModel.removeEventListener('reset', onReset);
             window.setTimeout(function() {
-              watchInfoModel.removeEventListener('reset', onReset);
               initialize();
             }, 0);
           };
+          watchInfoModel.addEventListener('reset', onReset);
         }
       })();
     }
