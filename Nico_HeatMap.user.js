@@ -3,7 +3,7 @@
 // @namespace   https://github.com/segabito/
 // @description コメントの盛り上がり状態をシンプルにグラフ表示。 GINZA用
 // @include     http://www.nicovideo.jp/watch/*
-// @version     1.1.3
+// @version     1.2.0
 // @grant       none
 // ==/UserScript==
 
@@ -17,11 +17,11 @@
   var monkey =
   (function() {
     'use strict';
-    if (!window.WatchApp || !window.WatchJsApi) {
+    if (!window.WatchJsApi) {
       return;
     }
 
-    var $ = window.jQuery, WatchApp = window.WatchApp;
+    var $ = window.jQuery, require = window.require;
 
     var config =  (function() {
       var prefix = 'NicoHeatMap_';
@@ -227,7 +227,7 @@
     CommentList.prototype = {
       initialize: function(WatchApp) {
         this._WatchApp = WatchApp;
-        this._commentPanelViewController = WatchApp.ns.init.PlayerInitializer.commentPanelViewController;
+        this._commentPanelViewController = require('watchapp/init/PlayerInitializer').commentPanelViewController;
       },
       getComments: function() {
         var comments = [];
@@ -379,7 +379,7 @@
       initialize: function(params) {
         var
           $ = params.$, window = params.window,
-          pac = params.WatchApp.ns.init.PlayerInitializer.playerAreaConnector,
+          pac = params.PlayerInitializer.playerAreaConnector,
           onCommentListInitialized = function() {
             window.setTimeout($.proxy(function() {
               this._commentReady = true;
@@ -433,7 +433,8 @@
     var initialize = function() {
       console.log('%cinitialize NicoHeatMap', 'background: lightgreen;');
       window.NicoHeatMap = new HeatMapController({
-        WatchApp: WatchApp,
+        WatchApp: require('WatchApp'),
+        PlayerInitializer: require('watchapp/init/PlayerInitializer'),
         resolution: 100,
         width: 100,
         height: 12,
@@ -444,9 +445,9 @@
       });
     };
 
-    if (window.PlayerApp) {
-      (function() {
-        var watchInfoModel = WatchApp.ns.model.WatchInfoModel.getInstance();
+    if (window.WatchJsApi) {
+      require(['watchapp/model/WatchInfoModel'], function(WatchInfoModel) {
+        var watchInfoModel = WatchInfoModel.getInstance();
         if (watchInfoModel.initialized) {
           initialize();
         } else {
@@ -458,7 +459,7 @@
           };
           watchInfoModel.addEventListener('reset', onReset);
         }
-      })();
+      });
     }
 
 
@@ -469,7 +470,16 @@
   gm.id = 'nicoHeatMapScript';
   gm.setAttribute("type", "text/javascript");
   gm.setAttribute("charset", "UTF-8");
-  gm.appendChild(document.createTextNode("(" + monkey + ")(window)"));
+  if (location.pathname.indexOf('/watch/') === 0) {
+    gm.appendChild(document.createTextNode(
+      'require(["WatchApp", "jquery", "lodash"], function() {' +
+        'console.log("%crequire WatchApp", "background: lightgreen;");' +
+        '(' + monkey + ')();' +
+      '});'
+    ));
+  } else {
+    gm.appendChild(document.createTextNode('(' + monkey + ')();'));
+  }
   document.body.appendChild(gm);
 
 })();
