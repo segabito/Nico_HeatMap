@@ -3,7 +3,7 @@
 // @namespace   https://github.com/segabito/
 // @description コメントの盛り上がり状態をシンプルにグラフ表示。 GINZA用
 // @include     http://www.nicovideo.jp/watch/*
-// @version     1.2.0
+// @version     1.2.1
 // @grant       none
 // ==/UserScript==
 
@@ -122,7 +122,7 @@
     var __css__ = (function() {/*
       #nicoHeatMapContainer {
         position: absolute; z-index: 200;
-        bottom: 0px; left: 0;
+        {*bottom: 0px;*} left: 0;
         width: 672px;
         background: #000; height: 6px;
         overflow: hidden;
@@ -131,7 +131,7 @@
       .size_normal #nicoHeatMapContainer {
         width: 898px;
       }
-      .oldTypeCommentInput #nicoHeatMapContainer {
+      {*.oldTypeCommentInput*} #nicoHeatMapContainer {
         bottom: 29px;
       }
       #content:hover #nicoHeatMapContainer, #nicoHeatMapContainer.displayAlways {
