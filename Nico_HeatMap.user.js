@@ -227,23 +227,13 @@
     CommentList.prototype = {
       initialize: function(WatchApp) {
         this._WatchApp = WatchApp;
-        this._commentPanelViewController = require('watchapp/init/PlayerInitializer').commentPanelViewController;
+        var pi = require('watchapp/init/PlayerInitializer');
+        this._rightSidePanelViewController = pi.rightSidePanelViewController;
       },
       getComments: function() {
-        var comments = [];
-        var commentPanelViewController = this._commentPanelViewController;
-        var activeListName = commentPanelViewController.commentListModel.getListName();
-        var list = commentPanelViewController.commentLists;
-
-        for (var i = 0; i < list.length; i++) {
-          if (list[i].listName === activeListName) {
-            comments = list[i].comments;
-            break;
-          }
-          var ct = list[i].comments;
-          comments = (comments.length < ct.length) ? ct : comments;
-        }
-        return comments;
+        var pt = this._rightSidePanelViewController.getPlayerPanelTabsView();
+        var cv = pt._commentPanelView;
+        return cv.getComments().getData();
       }
     };
 
@@ -380,6 +370,7 @@
         var
           $ = params.$, window = params.window,
           pac = params.PlayerInitializer.playerAreaConnector,
+          npc = params.NicoPlayerConnector,
           onCommentListInitialized = function() {
             window.setTimeout($.proxy(function() {
               this._commentReady = true;
@@ -394,8 +385,9 @@
             this._videoReady = true;
             this.update();
           };
+        var advice = require('advice');
+        advice.after(npc, 'onCommentListInitialized', $.proxy(onCommentListInitialized, this));
 
-        pac.addEventListener('onCommentListInitialized',   $.proxy(onCommentListInitialized, this));
         pac.addEventListener('onVideoInitialized',         $.proxy(onVideoInitialized      , this));
         pac.addEventListener('onVideoChangeStatusUpdated', $.proxy(this.reset              , this));
       },
@@ -435,6 +427,7 @@
       window.NicoHeatMap = new HeatMapController({
         WatchApp: require('WatchApp'),
         PlayerInitializer: require('watchapp/init/PlayerInitializer'),
+        NicoPlayerConnector: require('watchapp/model/player/NicoPlayerConnector'),
         resolution: 100,
         width: 100,
         height: 12,
@@ -443,6 +436,7 @@
         $: $,
         window: window
       });
+      console.log('%cinitialize NicoHeatMap OK', 'background: lightgreen;');
     };
 
     if (window.WatchJsApi) {
